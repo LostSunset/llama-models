@@ -30,11 +30,42 @@ To download the model weights and tokenizer, please visit the [Meta Llama websit
 
 Once your request is approved, you will receive a signed URL over email. Then, run the download.sh script, passing the URL provided when prompted to start the download.
 
-Pre-requisites: Ensure you have `wget` and `md5sum` installed. Then run the script: `./download.sh`.
+Pre-requisites: Ensure you have `wget` installed. Then run the script: `./download.sh`.
 
 Remember that the links expire after 24 hours and a certain amount of downloads. You can always re-request a link if you start seeing errors such as `403: Forbidden`.
 
-### Access to Hugging Face
+## Running the models
+
+You need to install the following dependencies (in addition to the `requirements.txt` in the root directory of this repository) to run the models:
+
+```
+pip install torch fairscale fire blobfile
+```
+
+After installing the dependencies, you can run the example scripts as follows:
+
+```bash
+#!/bin/bash
+
+PYTHONPATH=$(git rev-parse --show-toplevel) torchrun scripts/example_chat_completion.py <CHECKPOINT_DIR> <TOKENIZER_PATH>
+```
+
+The above script should be used with an Instruct (Chat) model. For running larger models with tensor parallelism, you should modify as:
+
+```bash
+#!/bin/bash
+
+NGPUS=8
+PYTHONPATH=$(git rev-parse --show-toplevel) torchrun \
+  --nproc_per_node=$NGPUS \
+  scripts/example_chat_completion.py <CHECKPOINT_DIR> <TOKENIZER_PATH> \
+  --model_parallel_size $NGPUS
+```
+
+For more flexibility in running inference (including running FP8 inference), please see the [`Llama Stack`](https://github.com/meta-llama/llama-stack) repository.
+
+
+## Access to Hugging Face
 
 We also provide downloads on [Hugging Face](https://huggingface.co/meta-llama), in both transformers and native `llama3` formats. To download the weights from Hugging Face, please follow these steps:
 
