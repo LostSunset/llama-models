@@ -42,13 +42,24 @@ class LLMInput:
     vision: Optional[VisionInput] = None
 
 
+def role_str(role: Role) -> str:
+    role_strs = {
+        Role.user: "user",
+        Role.system: "system",
+        Role.tool: "ipython",  # special
+        Role.assistant: "assistant",
+    }
+    return role_strs[role]
+
+
 class ChatFormat:
     possible_headers: Dict[Role, str]
 
     def __init__(self, tokenizer: Tokenizer):
         self.tokenizer = tokenizer
+
         self.possible_headers = {
-            role: f"<|start_header_id|>{role.value}<|end_header_id|>\n\n"
+            role: f"<|start_header_id|>{role_str(role)}<|end_header_id|>\n\n"
             for role in Role
         }
         self.vision_token = self.tokenizer.special_tokens["<|image|>"]
@@ -56,7 +67,11 @@ class ChatFormat:
     def _encode_header(self, role: str) -> List[int]:
         tokens = []
         tokens.append(self.tokenizer.special_tokens["<|start_header_id|>"])
-        tokens.extend(self.tokenizer.encode(role, bos=False, eos=False))
+        tokens.extend(
+            self.tokenizer.encode(
+                "ipython" if role == "tool" else role, bos=False, eos=False
+            )
+        )
         tokens.append(self.tokenizer.special_tokens["<|end_header_id|>"])
         tokens.extend(self.tokenizer.encode("\n\n", bos=False, eos=False))
         return tokens
@@ -154,7 +169,7 @@ class ChatFormat:
             images.extend(imgs)
 
         # Add the start of an assistant message for the model to complete.
-        tokens.extend(self._encode_header(Role.assistant.value))
+        tokens.extend(self._encode_header("assistant"))
 
         return self._model_input_from_tokens_images(tokens, images)
 
